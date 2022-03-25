@@ -25,6 +25,19 @@ services:
       - ./src:/news
       - ./commands:/news/commands
 
+  nginx:
+    image: nginx:1.19
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    ports:
+      - 80:80
+      - 443:443
+    env_file:
+      - .env
+    depends_on:
+      - api
+
+
   redis:
     image: redis
     env_file:
