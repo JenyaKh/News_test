@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:14.1
+    env_file:
+      - .env
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: .
+    image: news_container
+    working_dir: /news
+    env_file:
+      - .env
+    restart: on-failure
+    command: ./commands/start_server_${MODE}.sh
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/news
+      - ./commands:/news/commands
+
+  redis:
+    image: redis
+    env_file:
+      .env
+    restart: always
+
+  celery:
+    build: ./
+    command: ./commands/start_celery.sh
+    restart: always
+    volumes:
+      - ./src:/jewelry
+      - ./commands:/jewelry/commands
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  celerybeat:
+    env_file: .env
+    build: .
+    container_name: celery_beat
+    command: ./commands/start_celerybeat.sh
+    restart: always
+    volumes:
+      - ./src:/news
+      - ./commands:/news/commands
+    depends_on:
+      - redis
+      - celery
+
+volumes:
+  pgdata:
